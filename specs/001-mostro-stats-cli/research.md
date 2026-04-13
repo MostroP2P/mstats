@@ -86,10 +86,10 @@ Kind 38383 fetching is **mandatory** — statistics cannot be produced without i
 
 **Chosen**: The `y` tag's second value is collected from kind 8383 events per node. When displaying per-node statistics:
 - If **all** events for a given node pubkey have the same `y` tag second value → display that value
-- If events for the same node pubkey have **different** `y` tag second values → display the most frequently occurring value, with a count indicator (e.g., `"y_value: ABC (12/15 events)"`)
+- If events for the same node pubkey have **different** `y` tag second values → display the value from the most recently seen kind 8383 event (highest `created_at` for that node pubkey). No reconciliation or frequency-based strategy is applied in v1.
 - If **no** events for a node have a `y` tag second value → display `"N/A"`
 
-**Rationale**: The `y` tag is supplementary identification. Most nodes likely use a consistent value, but edge cases may exist. Showing the most common value with a frequency indicator provides useful information without fabricating a single value.
+**Rationale**: The `y` tag is supplementary identification. Most nodes likely use a consistent value, but edge cases may exist. Using the most recent value is simple and deterministic; no invented reconciliation strategy is applied in v1.
 
 **Alternatives considered**:
 - Show first seen value — rejected: not representative if inconsistent

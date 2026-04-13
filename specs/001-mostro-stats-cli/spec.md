@@ -97,6 +97,7 @@ A developer or analyst pipes the tool's JSON output into another script or tool 
 - **How does the system handle** duplicate kind 8383 events for the same order ID? — Each unique event is counted once; deduplication is based on event ID, not content.
 - **What happens when** fiat currency fields in kind 38383 events are missing or unrecognized? — The event's sats data is still aggregated, but fiat volume is noted as "unspecified currency" or skipped with a warning.
 - **What happens when** the `y` tag second value is missing from a kind 8383 event? — Per-node reports show the node pubkey with the `y` tag field marked as unavailable.
+- **What happens when** multiple kind 8383 events for the same node pubkey expose different `y` tag second values? — In v1 the tool displays the `y` tag value from the most recently seen (highest `created_at`) kind 8383 event for that node. No reconciliation or frequency-based strategy is applied.
 - **How does the system handle** orders where the `d` tag on the kind 38383 event does not match any `order-id` from kind 8383 events? — These orphan order events are not included in v1 statistics (kind 8383 is the entry point).
 - **What happens when** the data quality summary counts do not add up (processed ≠ joined + unmatched + skipped)? — This is an internal invariant violation; the tool MUST NOT produce output and MUST exit with a non-zero status.
 

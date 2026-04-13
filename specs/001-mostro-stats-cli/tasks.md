@@ -176,7 +176,7 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T052 [P] Implement `y` tag resolution logic in `src/aggregator.rs`: most-frequent-value-per-node with count indicator, N/A fallback
+- [ ] T052 [P] Implement `y` tag resolution logic in `src/aggregator.rs`: use value from most recently seen event (highest `created_at`) per node pubkey; N/A fallback
 - [ ] T053 [P] Add fiat-less order handling: orders with missing `fiat_currency`/`fiat_amount` still contribute to sats volume but are excluded from fiat volume grouping
 - [ ] T054 [P] Integration test: full pipeline against live relay in `tests/integration/test_relay_query.rs` (feature-gated)
 - [ ] T055 Verify `cargo fmt --check`, `cargo clippy` (zero warnings), `cargo test` all pass

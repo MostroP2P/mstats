@@ -105,7 +105,7 @@ Composite identifier for display purposes.
 
 **Resolution**: For a given pubkey, the `y_tag_value` is resolved across all DevFeeEvents for that node using the rule from research.md:
 - If all events agree → use that value
-- If events disagree → use most frequent value with count indicator
+- If events disagree → use the value from the most recently seen event (highest `created_at`)
 - If no events have the value → `None`
 
 ## Aggregation Structures
