@@ -1,0 +1,8 @@
+[build]
+rustflags = ["-Dwarnings"]
+
+[fmt]
+edition = "2021"
+
+[clippy]
+edition = "2021"
