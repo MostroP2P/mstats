@@ -49,7 +49,7 @@ A parsed kind 38383 order event.
 - `event_id`: String — Nostr event ID
 - `d_tag`: String — The `d` tag value (matches `order_id` from DevFeeEvent)
 - `amount_sats`: u64 — Total order amount in satoshis
-- `fiat_currency`: Option<String> — Fiat currency code (e.g., "USD", "EUR")
+- `fiat_currency`: Option<String> — Fiat currency code, **normalized to uppercase** (e.g., "usd" → "USD"). Stored as uppercase; normalization occurs during parsing.
 - `fiat_amount`: Option<f64> — Order amount in fiat currency
 - `order_side`: Option<OrderSide> — Buy or Sell
 
@@ -93,6 +93,7 @@ A kind 8383 event that could not be joined to a kind 38383 event.
 - `reason`: UnjoinReason — Why the join failed
   - `OrderNotFound` — No kind 38383 event exists with matching `d` tag
   - `OrderMalformed` — Kind 38383 event exists but is missing required fields
+  - `MalformedFeeEvent` — Kind 8383 event has missing or invalid `order-id` tag
 
 ### NodeKey
 
@@ -143,10 +144,20 @@ The complete output of a successful run.
 **Fields**:
 - `global`: GlobalStats — Network-wide statistics
 - `nodes`: Vec<NodeStats> — Per-node statistics (sorted by order_count descending)
-- `unjoined_count`: u64 — Number of unjoined kind 8383 events
+- `data_quality`: DataQualitySummary — Stable four-count summary (always present)
 - `unjoined`: Vec<UnjoinedRecord> — Details (JSON output only)
 - `errors`: Vec<String> — Processing errors (JSON output only)
 - `filter_summary`: String — Human-readable description of active filters
+
+### DataQualitySummary
+
+Invariant: `processed == joined + unmatched + skipped`.
+
+**Fields**:
+- `processed`: u64 — Total kind 8383 events successfully parsed
+- `joined`: u64 — Kind 8383 events matched to kind 38383 events (contributing to statistics)
+- `unmatched`: u64 — Kind 8383 events with no corresponding kind 38383 on the relay
+- `skipped`: u64 — Kind 8383 events skipped due to malformed data (missing `order-id`, invalid tags)
 
 ## Relationships
 
@@ -172,9 +183,11 @@ All active filters are AND-composed.
 
 ## Data Flow
 
-1. Fetch raw kind 8383 events → parse to DevFeeEvents (skip invalid)
-2. Extract unique order IDs → fetch kind 38383 events → parse to OrderEvents
-3. Join by order_id → produce JoinedOrderRecords + UnjoinedRecords
-4. Apply filters → filtered JoinedOrderRecords
-5. Aggregate → GlobalStats + Vec<NodeStats>
-6. Format → ReportOutput (human-readable or JSON)
+1. Fetch raw kind 8383 events → parse to DevFeeEvents (skip malformed → counted as **skipped**)
+2. Deduplicate order IDs from DevFeeEvents (unique `order_id` values, preserving event-level multiplicity)
+3. Fetch kind 38383 events in a **single batched relay query** filtering on `d` tags matching all unique order IDs
+4. Parse kind 38383 events to OrderEvents; normalize `fiat_currency` to uppercase
+5. Join by order_id → produce JoinedOrderRecords + UnjoinedRecords (unmatched → counted as **unmatched**)
+6. Apply filters → filtered JoinedOrderRecords
+7. Aggregate → GlobalStats + Vec<NodeStats>
+8. Format → ReportOutput (human-readable or JSON) with invariant `processed == joined + unmatched + skipped`

@@ -79,7 +79,12 @@ Node: abc123...def0123  (y: ABC123)
 [... additional nodes ...]
 
 Summary: Processed 1,234 kind 8383 events, joined with 1,180 kind 38383 events.
-Unjoined: 54 events excluded from aggregates.
+
+Data Quality:
+  Processed:  1,234
+  Joined:     1,180
+  Unmatched:     42
+  Skipped:       12
 ```
 
 ## Output Contract: JSON
@@ -122,7 +127,12 @@ Printed to stdout as a single valid JSON object. Structure:
       "source_event_ids": ["evt_id_1", "..."]
     }
   ],
-  "unjoined_count": 54,
+  "data_quality": {
+    "processed": 1234,
+    "joined": 1180,
+    "unmatched": 42,
+    "skipped": 12
+  },
   "unjoined": [
     {
       "event_id": "unmatched_8383_id",
@@ -151,5 +161,5 @@ Error: Invalid date format for --from: "2026-13-01" is not a valid date
 
 - `--from` and `--to` accept ISO 8601 date strings (e.g., `2026-01-01`) or raw Unix timestamps. Date-only values (no time component) are interpreted with differing semantics to produce the expected whole-day filtering behavior: `--from` is interpreted as midnight UTC of that date (inclusive start), while `--to` is interpreted as midnight UTC of the *next* day (exclusive upper bound) — so `--to 2026-01-01` matches everything up to but not including `2026-01-02T00:00:00Z`, covering the entire day of 2026-01-01. Values that include an explicit time are used as-is.
 - `--node` must be a valid hex-encoded 32-byte pubkey (64 hex characters). Invalid values produce exit code 2.
-- `--currency` accepts any string; the tool does not validate against a currency registry (unknown currencies simply match nothing).
+- `--currency` accepts any string; the value is normalized to uppercase for matching. The tool does not validate against a currency registry (unknown currencies simply match nothing). Internal currency codes from kind 38383 events are also normalized to uppercase.
 - `--side` must be exactly `buy` or `sell` (case-insensitive). Invalid values produce exit code 2.

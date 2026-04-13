@@ -5,7 +5,7 @@
 
 ## Summary
 
-Build `mstats`, a Rust CLI tool that analyzes Mostro P2P trading activity by fetching kind 8383 development fee events and kind 38383 order events from a single Nostr relay (`wss://relay.mostro.network`), joining them by order ID, and producing global and per-node aggregated statistics. The tool supports filtering by date range, node pubkey, fiat currency, and order side (buy/sell), with both human-readable default output and optional JSON output.
+Build `mstats`, a Rust CLI tool that analyzes Mostro P2P trading activity by fetching kind 8383 development fee events and kind 38383 order events from a single Nostr relay (`wss://relay.mostro.network`), joining them by order ID, and producing global and per-node aggregated statistics. Kind 38383 fetching is mandatory. Order IDs are deduplicated and kind 38383 events are fetched in a single batched relay query. The tool supports filtering by date range, node pubkey, fiat currency (case-insensitive, normalized to uppercase), and order side (buy/sell), with both human-readable default output (including data quality summary) and optional JSON output (including event-level trace IDs).
 
 ## Technical Context
 

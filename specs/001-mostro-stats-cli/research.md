@@ -25,17 +25,17 @@
 
 ## Decision: Event fetching pattern
 
-**Chosen**: Two-phase fetching:
+**Chosen**: Two-phase fetching with **batched** kind 38383 queries:
 1. Phase A: Query all kind 8383 events from the relay, extract order IDs and node pubkeys
-2. Phase B: Query kind 38383 events by filtering on `d` tags matching the collected order IDs
+2. Phase B: Deduplicate order IDs (unique set) → single batched relay query for kind 38383 events filtering on `d` tags matching all unique order IDs
 
-This approach minimizes redundant relay queries and leverages nostr-sdk's filter capabilities.
+Kind 38383 fetching is **mandatory** — statistics cannot be produced without it.
 
-**Rationale**: Kind 8383 events are the entry point (constitution Principle VII). Fetching all 8383s first gives us the complete set of order IDs to look up. Kind 38383 events are then fetched in a single filtered query rather than individual lookups.
+**Rationale**: Kind 8383 events are the entry point (constitution Principle VII). Deduplicating order IDs before the kind 38383 query eliminates N+1 roundtrips. nostr-sdk supports filtering on multiple `d` tag values in a single subscription, making this a single relay query regardless of how many unique order IDs exist (subject to relay-native limits on filter size).
 
 **Alternatives considered**:
-- Individual 38383 lookups per order ID — rejected: would create N+1 query pattern, slow for large datasets
-- Single subscription for both kinds — viable if nostr-sdk supports combined filters; will attempt this as an optimization
+- Individual 38383 lookups per order ID — rejected: N+1 query pattern, unacceptably slow for large datasets
+- Single subscription for both kinds simultaneously — viable but adds complexity; two-phase approach is simpler and gives us the complete order ID set before querying 38383s
 
 ## Decision: CLI framework
 
@@ -124,8 +124,38 @@ No sum or equivalent conversion is computed in v1.
 
 ## Decision: Traceability output scope
 
-**Chosen**: 
-- **JSON output**: Always includes event-level trace references. Each aggregated statistic section includes a `source_events` array listing the kind 8383 and kind 38383 event IDs that contributed to that statistic.
-- **Human-readable output (default)**: Does NOT include event IDs. Includes only a summary line showing total source events processed (e.g., "Processed 1,234 kind 8383 events, joined with 1,180 kind 38383 events").
+**Chosen**:
+- **JSON output**: Always includes `source_event_ids` arrays. Each aggregated statistic section (global and per-node) includes an array of kind 8383 and kind 38383 event IDs that contributed to that statistic. This is not gated behind a debug flag — it is always present in JSON output because JSON is designed for machine consumption and audit.
+- **Human-readable output (default)**: Does NOT include event IDs. Includes only the data quality summary counts (processed/joined/unmatched/skipped) and a total source events line (e.g., "Processed 1,234 kind 8383 events, joined with 1,180 kind 38383 events").
 
-**Rationale**: Including event IDs in human-readable output would make it unreadable for large datasets. JSON output is designed for machine consumption where event IDs are needed for audit traces.
+**Rationale**: Including event IDs in human-readable output would make it unreadable for large datasets. JSON output is always machine-oriented, so event IDs are always included there. The spec requires traceability (FR-018) — JSON output is the mechanism for audit.
+
+## Decision: Fiat currency normalization
+
+**Chosen**: All fiat currency codes from kind 38383 events are normalized to uppercase during parsing. Matching, grouping, and filtering all operate on the uppercase form. For example, "usd", "Usd", and "USD" all normalize to "USD" and are grouped together.
+
+**Rationale**: Relay data may contain currency codes in any case. Case-insensitive normalization prevents artificial splitting of the same currency into separate groups (e.g., "usd" and "USD" appearing as two different currencies). Uppercase is the conventional display form for ISO 4217 currency codes.
+
+## Decision: Data quality summary structure
+
+**Chosen**: A stable four-count summary is always present in both human-readable and JSON output:
+- **processed**: total kind 8383 events successfully parsed
+- **joined**: kind 8383 events matched to kind 38383 events (contributing to statistics)
+- **unmatched**: kind 8383 events with no corresponding kind 38383
+- **skipped**: kind 8383 events skipped due to malformed data (missing `order-id`, invalid tags)
+
+The invariant `processed == joined + unmatched + skipped` MUST hold. If it does not, the tool MUST exit with a non-zero status (this is an internal bug, not a user-facing error).
+
+**Rationale**: The constitution requires transparent handling of incomplete data (Principle IV). This summary gives users an immediate, unambiguous picture of data completeness. The invariant provides a self-check mechanism.
+
+## Decision: Protocol tag sources for key fields
+
+**Chosen**:
+- **Development fee amount** (kind 8383): extracted from the `amount` tag. The value is an integer representing satoshis. If the `amount` tag is absent or non-numeric, the event is classified as **skipped** in the data quality summary.
+- **Order side** (kind 38383): extracted from the `type` tag. Values are compared case-insensitively and normalized to `Buy` or `Sell`. Unrecognized or absent values map to `Unknown` and are excluded from side-filtered queries and side-grouped statistics.
+
+**Rationale**: These are the canonical tag names defined in the Mostro protocol specification. Documenting them explicitly prevents implementation guesswork.
+
+**Protocol references**:
+- Kind 8383 `amount` tag: <https://mostro.network/protocol/other_events.html#development-fee>
+- Kind 38383 `type` tag: <https://mostro.network/protocol/order_event.html>
