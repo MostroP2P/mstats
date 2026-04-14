@@ -27,11 +27,11 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize Rust 2021 edition project with `cargo init --name mstats`
-- [ ] T002 [P] Add dependencies to Cargo.toml: `nostr-sdk = "=0.44.1"`, `clap`, `serde`, `serde_json`, `chrono`
-- [ ] T003 [P] Configure `rustfmt` defaults and `clippy` linting in `.cargo/config.toml`
-- [ ] T004 Create `tests/unit/` and `tests/integration/` directory structure
-- [ ] T005 [P] Define `integration-tests` feature flag in Cargo.toml for gated integration tests
+- [x] T001 Initialize Rust 2021 edition project with `cargo init --name mstats`
+- [x] T002 [P] Add dependencies to Cargo.toml: `nostr-sdk = "=0.44.1"`, `clap`, `serde`, `serde_json`, `chrono`
+- [x] T003 [P] Configure `rustfmt` defaults and `clippy` linting in `.cargo/config.toml`
+- [x] T004 Create `tests/unit/` and `tests/integration/` directory structure
+- [x] T005 [P] Define `integration-tests` feature flag in Cargo.toml for gated integration tests
 
 ---
 
@@ -41,12 +41,12 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 [P] Define core data structures in `src/models.rs`: `NostrEvent`, `DevFeeEvent`, `OrderEvent`, `OrderSide` enum, `JoinedOrderRecord`, `UnjoinedRecord`, `NodeKey`
-- [ ] T007 [P] Define aggregation structures in `src/models.rs`: `NodeStats`, `GlobalStats`, `DataQualitySummary`, `ReportOutput`
-- [ ] T008 Implement `config.rs` with hardcoded relay URL (`wss://relay.mostro.network`) and default settings
-- [ ] T009 Implement `relay.rs`: relay client wrapper using nostr-sdk 0.44.1 — connect, subscribe for events, collect all events with timeout, disconnect
-- [ ] T010 Implement `cli.rs`: clap derive-mode CLI definition with `--json`, `--from`, `--to`, `--node`, `--currency`, `--side` flags per CLI contract
-- [ ] T011 [P] Create `src/main.rs` entry point wiring CLI parsing → config → placeholder pipeline → output dispatch
+- [x] T006 [P] Define core data structures in `src/models.rs`: `NostrEvent`, `DevFeeEvent`, `OrderEvent`, `OrderSide` enum, `JoinedOrderRecord`, `UnjoinedRecord`, `NodeKey`
+- [x] T007 [P] Define aggregation structures in `src/models.rs`: `NodeStats`, `GlobalStats`, `DataQualitySummary`, `ReportOutput`
+- [x] T008 Implement `config.rs` with hardcoded relay URL (`wss://relay.mostro.network`) and default settings
+- [x] T009 Implement `relay.rs`: relay client wrapper using nostr-sdk 0.44.1 — connect, subscribe for events, collect all events with timeout, disconnect
+- [x] T010 Implement `cli.rs`: clap derive-mode CLI definition with `--json`, `--from`, `--to`, `--node`, `--currency`, `--side` flags per CLI contract
+- [x] T011 [P] Create `src/main.rs` entry point wiring CLI parsing → config → placeholder pipeline → output dispatch
 
 **Checkpoint**: Foundation ready — user story implementation can now begin in parallel
 
@@ -60,21 +60,21 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] Unit test: parse kind 8383 event with valid `order-id` and `amount` tags in `tests/unit/test_event_parser.rs`
-- [ ] T013 [P] [US1] Unit test: parse kind 38383 event with valid `d`, `amount_sats`, `fiat_currency`, `fiat_amount`, `type` tags in `tests/unit/test_event_parser.rs`
-- [ ] T014 [US1] Unit test: join DevFeeEvent + OrderEvent by matching order_id to d_tag in `tests/unit/test_joiner.rs`
-- [ ] T015 [US1] Unit test: aggregate joined records into GlobalStats in `tests/unit/test_aggregator.rs`
-- [ ] T016 [US1] Unit test: aggregate joined records into per-node NodeStats grouped by pubkey in `tests/unit/test_aggregator.rs`
-- [ ] T017 [US1] Unit test: human-readable output formatter in `tests/unit/test_output.rs`
+ - [x] T012 [P] [US1] Unit test: parse kind 8383 event with valid `order-id` and `amount` tags in `tests/unit/test_event_parser.rs`
+ - [x] T013 [P] [US1] Unit test: parse kind 38383 event with valid `d`, `amount_sats`, `fiat_currency`, `fiat_amount`, `type` tags in `tests/unit/test_event_parser.rs`
+ - [x] T014 [US1] Unit test: join DevFeeEvent + OrderEvent by matching order_id to d_tag in `tests/unit/test_joiner.rs`
+ - [x] T015 [US1] Unit test: aggregate joined records into GlobalStats in `tests/unit/test_aggregator.rs`
+ - [x] T016 [US1] Unit test: aggregate joined records into per-node NodeStats grouped by pubkey in `tests/unit/test_aggregator.rs`
+ - [x] T017 [US1] Unit test: human-readable output formatter in `tests/unit/test_output.rs`
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Implement `src/event_parser.rs`: parse kind 8383 → `DevFeeEvent` (extract `order-id`, `amount`, `y` tag 2nd value, pubkey, created_at); parse kind 38383 → `OrderEvent` (extract `d`, `amount_sats`, `fiat_currency` uppercase, `fiat_amount`, `type` → `OrderSide`)
-- [ ] T019 [US1] Implement `src/relay.rs` two-phase fetch: (A) query kind 8383 events; (B) deduplicate order IDs → single batched relay query for kind 38383 events by `d` tag filter
-- [ ] T020 [US1] Implement `src/joiner.rs`: match DevFeeEvent.order_id to OrderEvent.d_tag → produce `JoinedOrderRecord` and `UnjoinedRecord` (reason: `OrderNotFound`)
-- [ ] T021 [US1] Implement `src/aggregator.rs`: compute `GlobalStats` and `Vec<NodeStats>` from `Vec<JoinedOrderRecord>` — order count, total fees, total sats volume, avg order size, fiat volume by currency, volume by side, `source_event_ids`
-- [ ] T022 [US1] Implement `src/output.rs`: human-readable formatter printing global stats → per-node stats (sorted by order_count desc) → data quality summary
-- [ ] T023 [US1] Wire main.rs pipeline: relay fetch → parse → join → aggregate → format (human-readable)
+ - [x] T018 [US1] Implement `src/event_parser.rs`: parse kind 8383 → `DevFeeEvent` (extract `order-id`, `amount`, `y` tag 2nd value, pubkey, created_at); parse kind 38383 → `OrderEvent` (extract `d`, `amount_sats`, `fiat_currency` uppercase, `fiat_amount`, `type` → `OrderSide`)
+ - [x] T019 [US1] Implement `src/relay.rs` two-phase fetch: (A) query kind 8383 events; (B) deduplicate order IDs → single batched relay query for kind 38383 events by `d` tag filter
+ - [x] T020 [US1] Implement `src/joiner.rs`: match DevFeeEvent.order_id to OrderEvent.d_tag → produce `JoinedOrderRecord` and `UnjoinedRecord` (reason: `OrderNotFound`)
+ - [x] T021 [US1] Implement `src/aggregator.rs`: compute `GlobalStats` and `Vec<NodeStats>` from `Vec<JoinedOrderRecord>` — order count, total fees, total sats volume, avg order size, fiat volume by currency, volume by side, `source_event_ids`
+ - [x] T022 [US1] Implement `src/output.rs`: human-readable formatter printing global stats → per-node stats (sorted by order_count desc) → data quality summary
+ - [x] T023 [US1] Wire main.rs pipeline: relay fetch → parse → join → aggregate → format (human-readable)
 
 **Checkpoint**: At this point, `mstats` runs end-to-end: connects to relay, fetches both event kinds, joins, aggregates, and prints a correct human-readable report.
 
@@ -88,19 +88,19 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 ### Tests for User Story 2
 
-- [ ] T024 [P] [US2] Unit test: date range filter on `fee_event.created_at` in `tests/unit/test_filters.rs`
-- [ ] T025 [P] [US2] Unit test: node pubkey filter in `tests/unit/test_filters.rs`
-- [ ] T026 [P] [US2] Unit test: fiat currency filter (case-insensitive, normalized to uppercase) in `tests/unit/test_filters.rs`
-- [ ] T027 [US2] Unit test: order side filter (Buy/Sell/Unknown) in `tests/unit/test_filters.rs`
-- [ ] T028 [US2] Unit test: composed filters (date + node + side) in `tests/unit/test_filters.rs`
-- [ ] T029 [US2] Unit test: `filter_summary` string reflects active filters in `tests/unit/test_output.rs`
+ - [x] T024 [P] [US2] Unit test: date range filter on `fee_event.created_at` in `tests/unit/test_filters.rs`
+ - [x] T025 [P] [US2] Unit test: node pubkey filter in `tests/unit/test_filters.rs`
+ - [x] T026 [P] [US2] Unit test: fiat currency filter (case-insensitive, normalized to uppercase) in `tests/unit/test_filters.rs`
+ - [x] T027 [US2] Unit test: order side filter (Buy/Sell/Unknown) in `tests/unit/test_filters.rs`
+ - [x] T028 [US2] Unit test: composed filters (date + node + side) in `tests/unit/test_filters.rs`
+ - [x] T029 [US2] Unit test: `filter_summary` string reflects active filters in `tests/unit/test_output.rs`
 
 ### Implementation for User Story 2
 
-- [ ] T030 [US2] Implement `src/filters.rs`: date range, node pubkey, fiat currency (uppercase-normalized), order side filter predicates on `Vec<JoinedOrderRecord>`; AND-compose active filters
-- [ ] T031 [US2] Implement date parsing in `src/cli.rs`: ISO 8601 and Unix timestamp for `--from`/`--to`, with date-only semantics (from = midnight UTC inclusive, to = next-day midnight exclusive)
-- [ ] T032 [US2] Wire filters into `src/main.rs`: apply filters after join, before aggregation
-- [ ] T033 [US2] Update `src/output.rs`: include `filter_summary` in output describing active filters
+ - [x] T030 [US2] Implement `src/filters.rs`: date range, node pubkey, fiat currency (uppercase-normalized), order side filter predicates on `Vec<JoinedOrderRecord>`; AND-compose active filters
+ - [x] T031 [US2] Implement date parsing in `src/cli.rs`: ISO 8601 and Unix timestamp for `--from`/`--to`, with date-only semantics (from = midnight UTC inclusive, to = next-day midnight exclusive)
+ - [x] T032 [US2] Wire filters into `src/main.rs`: apply filters after join, before aggregation
+ - [x] T033 [US2] Update `src/output.rs`: include `filter_summary` in output describing active filters
 
 **Checkpoint**: At this point, `mstats --from 2026-01-01 --currency USD --side buy` correctly narrows statistics. User Stories 1 and 2 both work independently.
 
@@ -114,13 +114,13 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 ### Tests for User Story 3
 
-- [ ] T034 [P] [US3] Unit test: `source_event_ids` populated correctly in GlobalStats in `tests/unit/test_aggregator.rs`
-- [ ] T035 [P] [US3] Unit test: `source_event_ids` populated correctly in each NodeStats in `tests/unit/test_aggregator.rs`
-- [ ] T036 [US3] Unit test: JSON output includes `source_event_ids` arrays in `tests/unit/test_output.rs`
+ - [x] T034 [P] [US3] Unit test: `source_event_ids` populated correctly in GlobalStats in `tests/unit/test_aggregator.rs`
+ - [x] T035 [P] [US3] Unit test: `source_event_ids` populated correctly in each NodeStats in `tests/unit/test_aggregator.rs`
+ - [x] T036 [US3] Unit test: JSON output includes `source_event_ids` arrays in `tests/unit/test_output.rs`
 
 ### Implementation for User Story 3
 
-- [ ] T037 [US3] Update `src/aggregator.rs`: collect `source_event_ids` (kind 8383 + kind 38383 event IDs) per aggregation scope (global and per-node) during statistics computation
+ - [x] T037 [US3] Update `src/aggregator.rs`: collect `source_event_ids` (kind 8383 + kind 38383 event IDs) per aggregation scope (global and per-node) during statistics computation
 
 **Checkpoint**: At this point, JSON output includes event ID traces. User Stories 1–3 all work independently.
 
@@ -134,19 +134,19 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 ### Tests for User Story 4
 
-- [ ] T038 [P] [US4] Unit test: kind 8383 event missing `order-id` → classified as skipped in `tests/unit/test_event_parser.rs`
-- [ ] T039 [P] [US4] Unit test: kind 8383 event with non-numeric `amount` tag → classified as skipped in `tests/unit/test_event_parser.rs`
-- [ ] T040 [US4] Unit test: data quality summary invariant `processed == joined + unmatched + skipped` in `tests/unit/test_aggregator.rs`
-- [ ] T041 [US4] Unit test: relay unreachable → exit code 1 + error to stderr in `tests/unit/test_relay.rs`
-- [ ] T042 [US4] Unit test: zero kind 8383 events → exit code 0 + "no data" message in `tests/unit/test_relay.rs`
+ - [x] T038 [P] [US4] Unit test: kind 8383 event missing `order-id` → classified as skipped in `tests/unit/test_event_parser.rs`
+ - [x] T039 [P] [US4] Unit test: kind 8383 event with non-numeric `amount` tag → classified as skipped in `tests/unit/test_event_parser.rs`
+ - [x] T040 [US4] Unit test: data quality summary invariant `processed == joined + unmatched + skipped` in `tests/unit/test_aggregator.rs`
+ - [x] T041 [US4] Unit test: relay unreachable → exit code 1 + error to stderr in `tests/unit/test_relay.rs`
+ - [x] T042 [US4] Unit test: zero kind 8383 events → exit code 0 + "no data" message in `tests/unit/test_relay.rs`
 
 ### Implementation for User Story 4
 
-- [ ] T043 [US4] Update `src/event_parser.rs`: classify events with missing/invalid `order-id` or `amount` as skipped; count in `DataQualitySummary.skipped`
-- [ ] T044 [US4] Update `src/joiner.rs`: record unjoined events with reasons (`OrderNotFound`, `OrderMalformed`); count in `DataQualitySummary.unmatched`
-- [ ] T045 [US4] Update `src/aggregator.rs`: compute `DataQualitySummary` with `processed`, `joined`, `unmatched`, `skipped`; assert invariant
-- [ ] T046 [US4] Update `src/output.rs`: include data quality summary section in both human-readable and JSON output
-- [ ] T047 [US4] Update `src/relay.rs`: handle connection timeout/failure → exit code 1 + stderr error message; handle zero events → exit code 0 + "no data"
+ - [x] T043 [US4] Update `src/event_parser.rs`: classify events with missing/invalid `order-id` or `amount` as skipped; count in `DataQualitySummary.skipped`
+ - [x] T044 [US4] Update `src/joiner.rs`: record unjoined events with reasons (`OrderNotFound`, `OrderMalformed`); count in `DataQualitySummary.unmatched`
+ - [x] T045 [US4] Update `src/aggregator.rs`: compute `DataQualitySummary` with `processed`, `joined`, `unmatched`, `skipped`; assert invariant
+ - [x] T046 [US4] Update `src/output.rs`: include data quality summary section in both human-readable and JSON output
+ - [x] T047 [US4] Update `src/relay.rs`: handle connection timeout/failure → exit code 1 + stderr error message; handle zero events → exit code 0 + "no data"
 
 **Checkpoint**: At this point, the tool handles all error and incomplete-data paths gracefully.
 
@@ -160,13 +160,13 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 ### Tests for User Story 5
 
-- [ ] T048 [P] [US5] Unit test: JSON output is valid and parseable in `tests/unit/test_output.rs`
-- [ ] T049 [US5] Unit test: JSON output contains all fields: `global`, `nodes`, `data_quality`, `unjoined`, `errors`, `filter_summary` in `tests/unit/test_output.rs`
+ - [x] T048 [P] [US5] Unit test: JSON output is valid and parseable in `tests/unit/test_output.rs`
+ - [x] T049 [US5] Unit test: JSON output contains all fields: `global`, `nodes`, `data_quality`, `unjoined`, `errors`, `filter_summary` in `tests/unit/test_output.rs`
 
 ### Implementation for User Story 5
 
-- [ ] T050 [US5] Update `src/output.rs`: implement JSON output formatter using serde — serialize `ReportOutput` with `GlobalStats`, `Vec<NodeStats>`, `DataQualitySummary`, `Vec<UnjoinedRecord>`, `Vec<String>` errors, `filter_summary`
-- [ ] T051 [US5] Wire `--json` flag in `src/main.rs`: dispatch to JSON formatter when flag is set
+ - [x] T050 [US5] Update `src/output.rs`: implement JSON output formatter using serde — serialize `ReportOutput` with `GlobalStats`, `Vec<NodeStats>`, `DataQualitySummary`, `Vec<UnjoinedRecord>`, `Vec<String>` errors, `filter_summary`
+ - [x] T051 [US5] Wire `--json` flag in `src/main.rs`: dispatch to JSON formatter when flag is set
 
 **Checkpoint**: All 5 user stories are independently functional.
 
@@ -176,12 +176,12 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T052 [P] Implement `y` tag resolution logic in `src/aggregator.rs`: use value from most recently seen event (highest `created_at`) per node pubkey; N/A fallback
-- [ ] T053 [P] Add fiat-less order handling: orders with missing `fiat_currency`/`fiat_amount` still contribute to sats volume but are excluded from fiat volume grouping
-- [ ] T054 [P] Integration test: full pipeline against live relay in `tests/integration/test_relay_query.rs` (feature-gated)
-- [ ] T055 Verify `cargo fmt --check`, `cargo clippy` (zero warnings), `cargo test` all pass
-- [ ] T056 [P] Update `quickstart.md` with actual CLI examples after implementation
-- [ ] T057 [P] Add `README.md` at repository root describing mstats purpose and usage
+ - [x] T052 [P] Implement `y` tag resolution logic in `src/aggregator.rs`: most-frequent-value-per-node with count indicator, N/A fallback
+ - [x] T053 [P] Add fiat-less order handling: orders with missing `fiat_currency`/`fiat_amount` still contribute to sats volume but are excluded from fiat volume grouping
+ - [x] T054 [P] Integration test: full pipeline against live relay in `tests/integration/test_relay_query.rs` (feature-gated)
+ - [x] T055 Verify `cargo fmt --check`, `cargo clippy` (zero warnings), `cargo test` all pass
+ - [x] T056 [P] Update `quickstart.md` with actual CLI examples after implementation
+ - [x] T057 [P] Add `README.md` at repository root describing mstats purpose and usage
 
 ---
 

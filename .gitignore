@@ -1,0 +1,14 @@
+/target
+**/*.rs.bk
+*.rlib
+*.prof*
+*.profraw
+*.gcno
+*.gcda
+Cargo.lock
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store
+*.log
