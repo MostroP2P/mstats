@@ -64,7 +64,7 @@ Global:
 
 --- Per-Node Statistics ---
 
-Node: abc123...def0123  (y: ABC123)
+Node: abc123...def0123  (name: ABC123)
   Orders:              456
   Total Dev Fees:      12,345 sats
   Total Volume:        4,567,890 sats
@@ -111,7 +111,7 @@ Printed to stdout as a single valid JSON object. Structure:
   "nodes": [
     {
       "pubkey": "abc123...def0123",
-      "y_tag_value": "ABC123",
+      "name": "ABC123",
       "order_count": 456,
       "total_fees_sats": 12345,
       "total_volume_sats": 4567890,
@@ -138,7 +138,7 @@ Printed to stdout as a single valid JSON object. Structure:
       "event_id": "unmatched_8383_id",
       "order_id": "order_xyz",
       "pubkey": "aa1234...bb5678",
-      "y_tag_value": "NODE_X",
+      "name": "NODE_X",
       "fee_amount_sats": 500,
       "reason": "OrderNotFound"
     }

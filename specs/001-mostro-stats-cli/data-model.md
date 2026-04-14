@@ -31,7 +31,7 @@ A parsed kind 8383 development fee event.
 - `pubkey`: String — Author pubkey (identifies the Mostro node)
 - `created_at`: u64 — Event timestamp (used for date filtering)
 - `order_id`: String — Value of the `order-id` tag
-- `y_tag_value`: Option<String> — Second value of the `y` tag, if present
+- `name`: Option<String> — Third value of the `y` tag (node display name), if present. The second `y` tag value (`"mostro"`) is a platform marker and is NOT stored or exposed in reports.
 - `fee_amount_sats`: u64 — Development fee amount in satoshis (extracted from event tags)
 
 **Validation rules**:
@@ -96,7 +96,7 @@ A kind 8383 event that could not be joined to a kind 38383 event. Retains all di
 - `event_id`: String — Nostr event ID of the kind 8383 event
 - `order_id`: String — The `order-id` tag value (when present)
 - `pubkey`: String — The event author pubkey (node identity)
-- `y_tag_value`: Option<String> — Second value of the `y` tag, when available
+- `name`: Option<String> — Third value of the `y` tag (display name), when available
 - `fee_amount_sats`: Option<u64> — Development fee amount from the `amount` tag, when parseable
 - `reason`: UnjoinReason — Why the join failed
   - `OrderNotFound` — No kind 38383 event exists with matching `d` tag
@@ -109,9 +109,9 @@ Composite identifier for display purposes.
 
 **Fields**:
 - `pubkey`: String — The node's author pubkey
-- `y_tag_value`: Option<String> — The `y` tag second value (resolved per-node across all events)
+- `name`: Option<String> — The `y` tag third value (display name, resolved per-node across all events)
 
-**Resolution**: For a given pubkey, the `y_tag_value` is resolved across all DevFeeEvents for that node using the rule from research.md:
+**Resolution**: For a given pubkey, the `name` is resolved across all DevFeeEvents for that node using the rule from research.md:
 - If all events agree → use that value
 - If events disagree → use the value from the most recently seen event (highest `created_at`)
 - If no events have the value → `None`
@@ -123,7 +123,7 @@ Composite identifier for display purposes.
 Per-node aggregated statistics.
 
 **Fields**:
-- `node`: NodeKey — Node identity
+- `node`: NodeKey — Node identity (pubkey + display name)
 - `order_count`: u64 — Number of joined orders
 - `total_fees_sats`: u64 — Sum of development fees
 - `total_volume_sats`: u64 — Sum of order amounts in sats

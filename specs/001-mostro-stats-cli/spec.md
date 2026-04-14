@@ -9,7 +9,7 @@
 
 ### User Story 1 - Run global and per-node statistics reports (Priority: P1)
 
-A Mostro operator or auditor runs the `mstats` CLI to see aggregated trading statistics. The tool connects to the configured relay, fetches kind 8383 development fee events, extracts order IDs, fetches the corresponding kind 38383 order events, joins them by order ID, and outputs both global network-wide statistics and per-node reports. Global statistics cover all observed Mostro nodes; per-node statistics cover each individual node identified by the author pubkey of the kind 8383 event, displaying both the node pubkey and the second value of the `y` tag from the kind 8383 event when available.
+A Mostro operator or auditor runs the `mstats` CLI to see aggregated trading statistics. The tool connects to the configured relay, fetches kind 8383 development fee events, extracts order IDs, fetches the corresponding kind 38383 order events, joins them by order ID, and outputs both global network-wide statistics and per-node reports. Global statistics cover all observed Mostro nodes; per-node statistics cover each individual node identified by the author pubkey of the kind 8383 event, displaying both the node pubkey and a `name` field (populated from the third element of the `y` tag when present; empty otherwise).
 
 Each report shows number of orders, total development fees paid, total traded volume in sats, average order size in sats, and fiat volume grouped by currency.
 
@@ -19,7 +19,7 @@ Each report shows number of orders, total development fees paid, total traded vo
 
 **Acceptance Scenarios**:
 
-1. **Given** the relay is reachable and contains kind 8383 and kind 38383 events, **When** the user runs the CLI with default settings, **Then** a human-readable report is printed to stdout showing global network statistics followed by per-node statistics including node pubkey, `y` tag second value (when available), order count, total fees, total sats volume, average order size, and fiat volume by currency.
+1. **Given** the relay is reachable and contains kind 8383 and kind 38383 events, **When** the user runs the CLI with default settings, **Then** a human-readable report is printed to stdout showing global network statistics followed by per-node statistics including node pubkey, `name` field (when available), order count, total fees, total sats volume, average order size, and fiat volume by currency.
 2. **Given** a specific order ID exists in a kind 8383 event, **When** the tool processes that event, **Then** it fetches the matching kind 38383 order event (matched by `d` tag equal to the order ID) and correctly joins the data for aggregation.
 3. **Given** the user requests JSON output via a flag, **When** the tool runs, **Then** the output is valid JSON with the same statistical data structured for machine consumption.
 
@@ -85,7 +85,7 @@ A developer or analyst pipes the tool's JSON output into another script or tool 
 **Acceptance Scenarios**:
 
 1. **Given** the user passes a JSON output flag, **When** the tool runs successfully, **Then** stdout contains valid JSON that can be parsed by standard JSON tools.
-2. **Given** the JSON output, **When** a script processes it, **Then** all statistics (global totals, per-node breakdowns with node pubkey and `y` tag values, order counts, fees, sats volume, average size, fiat volume, order side breakdowns) are accessible as structured fields.
+2. **Given** the JSON output, **When** a script processes it, **Then** all statistics (global totals, per-node breakdowns with node pubkey and `name` field, order counts, fees, sats volume, average size, fiat volume, order side breakdowns) are accessible as structured fields.
 
 ---
 
@@ -96,10 +96,10 @@ A developer or analyst pipes the tool's JSON output into another script or tool 
 - **What happens when** the relay returns zero kind 8383 events for the query window? — The tool reports "no data found" and exits cleanly (non-error, since this is a valid state).
 - **How does the system handle** duplicate kind 8383 events for the same order ID? — Each unique event is counted once; deduplication is based on event ID, not content.
 - **What happens when** fiat currency fields in kind 38383 events are missing or unrecognized? — The event's sats data is still aggregated, but fiat volume is noted as "unspecified currency" or skipped with a warning.
-- **What happens when** the `y` tag second value is missing from a kind 8383 event? — Per-node reports show the node pubkey with the `y` tag field marked as unavailable.
-- **What happens when** multiple kind 8383 events for the same node pubkey expose different `y` tag second values? — In v1 the tool displays the `y` tag value from the most recently seen (highest `created_at`) kind 8383 event for that node. No reconciliation or frequency-based strategy is applied.
+- **What happens when** the `y` tag's third value is missing from a kind 8383 event? — Per-node reports show the node pubkey with the `name` field empty.
+- **What happens when** multiple kind 8383 events for the same node pubkey expose different `y` tag third values? — In v1 the tool displays the `name` from the most recently seen (highest `created_at`) kind 8383 event for that node. No reconciliation or frequency-based strategy is applied.
 - **How does the system handle** orders where the `d` tag on the kind 38383 event does not match any `order-id` from kind 8383 events? — These orphan order events are not included in v1 statistics (kind 8383 is the entry point).
-- **What happens when** a kind 8383 event cannot be joined to a kind 38383 event? — The unmatched event is reported in the unjoined list with all directly available kind 8383 metadata: `event_id`, `order_id` (when present), `pubkey` (node identity), `y` tag second value (when available), and `amount` tag value (when parseable). No order-level fields are fabricated; the reason for the failed join is included.
+- **What happens when** a kind 8383 event cannot be joined to a kind 38383 event? — The unmatched event is reported in the unjoined list with all directly available kind 8383 metadata: `event_id`, `order_id` (when present), `pubkey` (node identity), `name` (from third `y` tag element, when present), and `amount` tag value (when parseable). No order-level fields are fabricated; the reason for the failed join is included.
 - **What happens when** the data quality summary counts do not add up (processed ≠ joined + unmatched + skipped)? — This is an internal invariant violation; the tool MUST NOT produce output and MUST exit with a non-zero status.
 
 ### Data Quality Summary
@@ -123,7 +123,7 @@ Invariant: `processed == joined + unmatched + skipped`. This count set is always
 - **FR-004**: The tool MUST join kind 8383 and kind 38383 events by order ID.
 - **FR-005**: The tool MUST compute global (network-wide) statistics across all observed Mostro nodes.
 - **FR-006**: The tool MUST compute per-node statistics, where a node is identified by the author pubkey of the kind 8383 event.
-- **FR-007**: Per-node reports MUST display the node pubkey and the second value of the `y` tag from the kind 8383 event when available.
+- **FR-007**: Per-node reports MUST display the node pubkey and a `name` field. The `name` field is populated from the third element of the `y` tag when present; if the third element is absent, `name` is empty. The second `y` tag element (`"mostro"`) is a platform marker and MUST NOT be exposed in reports.
 - **FR-008**: The tool MUST report the following statistics for each aggregation scope (global and per-node):
   - Number of orders
   - Total development fees paid
@@ -151,10 +151,10 @@ Invariant: `processed == joined + unmatched + skipped`. This count set is always
 
 ### Key Entities
 
-- **Kind 8383 Event (Development Fee)**: A Nostr event representing a development fee payment made by a Mostro node to the Mostro development fund. Contains an `order-id` tag linking it to a specific order, and a `y` tag whose second value provides additional node identification. The author pubkey of this event identifies the Mostro node. Protocol reference: <https://mostro.network/protocol/other_events.html#development-fee>
+- **Kind 8383 Event (Development Fee)**: A Nostr event representing a development fee payment made by a Mostro node to the Mostro development fund. Contains an `order-id` tag linking it to a specific order, and a `y` tag whose second value is the fixed platform marker (`"mostro"`) and whose optional third value provides a display name for the node. The author pubkey of this event identifies the Mostro node. Protocol reference: <https://mostro.network/protocol/other_events.html#development-fee>
 - **Kind 38383 Event (Order)**: A Nostr event representing a Mostro order. Identified by its `d` tag (which matches the `order-id` from the corresponding kind 8383 event). Contains total order amount in sats, fiat currency code, fiat amount, and order side (buy/sell). Protocol reference: <https://mostro.network/protocol/order_event.html>
 - **Mostro Node**: An independent Mostro operator identified by the author pubkey of the kind 8383 events they publish. All nodes publish events to Nostr; the tool observes and aggregates across them.
-- **Joined Order Record**: The result of joining a kind 8383 event with its corresponding kind 38383 event by matching the `order-id` tag to the `d` tag. Contains fee data, order amount, fiat details, the node pubkey (from the kind 8383 event), `y` tag value, and order side.
+- **Joined Order Record**: The result of joining a kind 8383 event with its corresponding kind 38383 event by matching the `order-id` tag to the `d` tag. Contains fee data, order amount, fiat details, the node pubkey (from the kind 8383 event), `name` (from third `y` tag element, when present), and order side.
 
 ## Success Criteria *(mandatory)*
 
@@ -169,6 +169,12 @@ Invariant: `processed == joined + unmatched + skipped`. This count set is always
 - **SC-007**: Each filter (date, node, currency, order side) and every combination of filters correctly narrows the dataset — verified by running the tool with known subsets and confirming reported totals match the expected subset.
 - **SC-008**: Global statistics equal the sum of all per-node statistics — verified for order count, total fees, and total sats volume with zero discrepancy.
 
+## Clarifications
+
+### Session 2026-04-14
+
+- Q: What does the `y` tag represent in kind 8383 events and how should it be mapped to output? → A: Second element is fixed platform marker (`"mostro"`), never exposed; third element (when present) becomes `name` for display; node identity remains author pubkey.
+
 ## Assumptions
 
 - The relay `wss://relay.mostro.network` is accessible and contains a representative set of kind 8383 and kind 38383 events for the target analysis period.
@@ -178,5 +184,5 @@ Invariant: `processed == joined + unmatched + skipped`. This count set is always
 - Users have basic familiarity with running CLI tools and interpreting tabular/statistical output.
 - No authentication or authorization is required to query events from the relay for v1.
 - The analysis period (date range) defaults to all available events when no date filter is specified.
-- The `y` tag on kind 8383 events may or may not be present; when present, its second value is used for display in per-node reports.
+- The `y` tag on kind 8383 events follows the Mostro platform convention: the second element is always `"mostro"` (platform marker, not exposed in reports) and an optional third element provides a display name for the node. When the third element is absent, `name` is empty. Node identity for grouping remains the author pubkey; `name` is display metadata only.
 - Order side (buy/sell) is reliably encoded in kind 38383 events per the Mostro protocol specification.

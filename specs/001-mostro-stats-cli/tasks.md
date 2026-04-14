@@ -69,7 +69,7 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 ### Implementation for User Story 1
 
- - [x] T018 [US1] Implement `src/event_parser.rs`: parse kind 8383 → `DevFeeEvent` (extract `order-id`, `amount`, `y` tag 2nd value, pubkey, created_at); parse kind 38383 → `OrderEvent` (extract `d`, `amount_sats`, `fiat_currency` uppercase, `fiat_amount`, `type` → `OrderSide`)
+ - [x] T018 [US1] Implement `src/event_parser.rs`: parse kind 8383 → `DevFeeEvent` (extract `order-id`, `amount`, `y` tag 3rd value as `name`, pubkey, created_at); parse kind 38383 → `OrderEvent` (extract `d`, `amount_sats`, `fiat_currency` uppercase, `fiat_amount`, `type` → `OrderSide`)
  - [x] T019 [US1] Implement `src/relay.rs` two-phase fetch: (A) query kind 8383 events; (B) deduplicate order IDs → single batched relay query for kind 38383 events by `d` tag filter
  - [x] T020 [US1] Implement `src/joiner.rs`: match DevFeeEvent.order_id to OrderEvent.d_tag → produce `JoinedOrderRecord` and `UnjoinedRecord` (reason: `OrderNotFound`)
  - [x] T021 [US1] Implement `src/aggregator.rs`: compute `GlobalStats` and `Vec<NodeStats>` from `Vec<JoinedOrderRecord>` — order count, total fees, total sats volume, avg order size, fiat volume by currency, volume by side, `source_event_ids`
@@ -176,7 +176,7 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 
 **Purpose**: Improvements that affect multiple user stories
 
- - [x] T052 [P] Implement `y` tag resolution logic in `src/aggregator.rs`: most-frequent-value-per-node with count indicator, N/A fallback
+ - [x] T052 [P] Implement `name` resolution logic in `src/aggregator.rs`: most-recent-value-per-node (highest `created_at`), empty fallback
  - [x] T053 [P] Add fiat-less order handling: orders with missing `fiat_currency`/`fiat_amount` still contribute to sats volume but are excluded from fiat volume grouping
  - [x] T054 [P] Integration test: full pipeline against live relay in `tests/integration/test_relay_query.rs` (feature-gated)
  - [x] T055 Verify `cargo fmt --check`, `cargo clippy` (zero warnings), `cargo test` all pass
