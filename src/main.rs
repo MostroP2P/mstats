@@ -73,8 +73,16 @@ async fn run() -> Result<(), String> {
     let (joined, unjoined) = join_events(&fee_events, &order_events);
 
     // Apply filters
-    let from_ts = args.from.as_ref().and_then(|s| parse_timestamp(s).ok());
-    let to_ts = args.to.as_ref().and_then(|s| parse_timestamp(s).ok());
+    let from_ts = args
+        .from
+        .as_ref()
+        .map(|s| parse_timestamp(s, false))
+        .transpose()?;
+    let to_ts = args
+        .to
+        .as_ref()
+        .map(|s| parse_timestamp(s, true))
+        .transpose()?;
     let node_pubkey = args.node.as_deref();
     let currency = args.currency.as_deref();
     let side = args.side.as_deref();
@@ -99,12 +107,24 @@ async fn run() -> Result<(), String> {
 }
 
 /// Parse a date string (ISO 8601 or Unix timestamp) to a Unix timestamp.
-fn parse_timestamp(s: &str) -> Result<u64, String> {
-    // Try as Unix timestamp first
+fn parse_timestamp(s: &str, end_of_day: bool) -> Result<u64, String> {
     if let Ok(ts) = s.parse::<u64>() {
         return Ok(ts);
     }
-    // Try as ISO 8601 date
+
+    if let Ok(date) = chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+        let dt = if end_of_day {
+            date.succ_opt()
+                .and_then(|next| next.and_hms_opt(0, 0, 0))
+                .ok_or_else(|| format!("Invalid date format '{}'", s))?
+                - chrono::TimeDelta::seconds(1)
+        } else {
+            date.and_hms_opt(0, 0, 0)
+                .ok_or_else(|| format!("Invalid date format '{}'", s))?
+        };
+        return Ok(dt.and_utc().timestamp() as u64);
+    }
+
     let dt: chrono::DateTime<chrono::Utc> = s
         .parse()
         .map_err(|e| format!("Invalid date format '{}': {}", s, e))?;
@@ -128,7 +148,8 @@ fn build_filter_summary(
         parts.push(format!("to: {}", format_ts(to)));
     }
     if let Some(pk) = node_pubkey {
-        parts.push(format!("node: {}...", &pk[..16]));
+        let short_pk: String = pk.chars().take(16).collect();
+        parts.push(format!("node: {}...", short_pk));
     }
     if let Some(cur) = currency {
         parts.push(format!("currency: {}", cur.to_uppercase()));
