@@ -1,6 +1,6 @@
 # mstats
 
-Mostro trading statistics CLI. Fetches kind 8383 development fee events and kind 38383 order events from `wss://relay.mostro.network`, joins them by `order-id` from kind 8383 against `d` from kind 38383, and produces global and per-node aggregated statistics.
+Mostro trading statistics CLI. Fetches kind 8383 development fee events and kind 38383 order events from `wss://relay.mostro.network` using explicit time-window queries, joins them by `order-id` from kind 8383 against `d` from kind 38383, and produces global and per-node aggregated statistics.
 
 ## Quick Start
 

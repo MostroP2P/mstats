@@ -54,19 +54,16 @@ async fn run() -> Result<(), String> {
         })
         .collect();
 
-    // Phase B: Deduplicate order IDs and batch-fetch kind 38383 events
-    let unique_order_ids: Vec<String> = fee_events
-        .iter()
-        .map(|e| e.order_id.clone())
-        .collect::<std::collections::HashSet<_>>()
-        .into_iter()
-        .collect();
+    // Phase B: Fetch kind 38383 events with the same windowed strategy and filter locally
+    let order_events_raw = client.fetch_kind_38383_events().await?;
 
-    let order_events_raw = client.fetch_kind_38383_events(&unique_order_ids).await?;
+    let unique_order_ids: std::collections::HashSet<String> =
+        fee_events.iter().map(|e| e.order_id.clone()).collect();
 
     let order_events: Vec<models::OrderEvent> = order_events_raw
         .into_iter()
         .filter_map(|ev| parse_order_event(&ev).ok())
+        .filter(|ev| unique_order_ids.contains(&ev.d_tag))
         .collect();
 
     // Join

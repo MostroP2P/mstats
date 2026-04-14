@@ -1,5 +1,11 @@
-use nostr_sdk::prelude::*;
+use std::collections::{HashMap, HashSet};
 use std::time::Duration;
+
+use nostr_sdk::prelude::*;
+
+const WINDOW_LIMIT: usize = 500;
+const LOOKBACK_WINDOW_SECS: u64 = 7 * 24 * 60 * 60;
+const MAX_EMPTY_WINDOWS: usize = 8;
 
 use crate::config::Config;
 use crate::models::NostrEvent;
@@ -41,45 +47,94 @@ impl RelayClient {
         self.client.disconnect().await;
     }
 
-    /// Fetch kind 8383 events from the relay.
+    /// Fetch kind 8383 events from the relay using explicit time windows.
     pub async fn fetch_kind_8383_events(&self) -> Result<Vec<NostrEvent>, String> {
         self.ensure_connected().await?;
-
-        let filter = Filter::new().kind(Kind::Custom(8383));
-        let events = self
-            .client
-            .fetch_events(filter, RELAY_TIMEOUT)
-            .await
-            .map_err(|e| format!("Failed to fetch kind 8383 events: {}", e))?;
-
+        let result = self.fetch_windowed_events(Kind::Custom(8383)).await;
         self.disconnect().await;
-        Ok(events.iter().map(nostr_event_to_model).collect())
+        result
     }
 
-    /// Fetch kind 38383 events filtered by a set of `d` tag values (batched query).
-    pub async fn fetch_kind_38383_events(
-        &self,
-        d_tag_values: &[String],
-    ) -> Result<Vec<NostrEvent>, String> {
-        if d_tag_values.is_empty() {
-            return Ok(vec![]);
+    /// Fetch kind 38383 events from the relay using explicit time windows.
+    pub async fn fetch_kind_38383_events(&self) -> Result<Vec<NostrEvent>, String> {
+        self.ensure_connected().await?;
+        let result = self.fetch_windowed_events(Kind::Custom(38383)).await;
+        self.disconnect().await;
+        result
+    }
+
+    async fn fetch_windowed_events(&self, kind: Kind) -> Result<Vec<NostrEvent>, String> {
+        let now = Timestamp::now().as_secs();
+        let mut window_end = now;
+        let mut by_id: HashMap<String, NostrEvent> = HashMap::new();
+        let mut seen_ranges: HashSet<(u64, u64)> = HashSet::new();
+        let mut consecutive_empty_windows = 0usize;
+        let mut window_span = LOOKBACK_WINDOW_SECS;
+
+        loop {
+            let window_start = window_end.saturating_sub(window_span);
+            if !seen_ranges.insert((window_start, window_end)) {
+                break;
+            }
+
+            let filter = Filter::new()
+                .kind(kind)
+                .since(Timestamp::from(window_start))
+                .until(Timestamp::from(window_end))
+                .limit(WINDOW_LIMIT);
+
+            let events = self
+                .client
+                .fetch_events(filter, RELAY_TIMEOUT)
+                .await
+                .map_err(|e| format!("Failed to fetch kind {} events: {}", kind.as_u16(), e))?;
+
+            let batch: Vec<NostrEvent> = events.iter().map(nostr_event_to_model).collect();
+            let batch_len = batch.len();
+            let oldest_created_at = batch.iter().map(|ev| ev.created_at).min();
+
+            if batch_len == 0 {
+                consecutive_empty_windows += 1;
+            } else {
+                consecutive_empty_windows = 0;
+            }
+
+            for event in batch.into_iter() {
+                by_id.entry(event.id.clone()).or_insert(event);
+            }
+
+            if window_start == 0 {
+                break;
+            }
+
+            if consecutive_empty_windows >= MAX_EMPTY_WINDOWS {
+                break;
+            }
+
+            if batch_len == WINDOW_LIMIT {
+                if let Some(oldest_created_at) = oldest_created_at {
+                    let narrowed_end = oldest_created_at.saturating_sub(1);
+                    if narrowed_end > window_start {
+                        window_end = narrowed_end;
+                        continue;
+                    }
+                }
+
+                let narrower_span = (window_span / 2).max(1);
+                if narrower_span == window_span {
+                    break;
+                }
+                window_span = narrower_span;
+                continue;
+            }
+
+            window_end = window_start.saturating_sub(1);
+            window_span = LOOKBACK_WINDOW_SECS;
         }
 
-        self.ensure_connected().await?;
-
-        // Batch filter: single query with multiple d-tag values
-        let filter = Filter::new()
-            .kind(Kind::Custom(38383))
-            .identifiers(d_tag_values);
-
-        let events = self
-            .client
-            .fetch_events(filter, RELAY_TIMEOUT)
-            .await
-            .map_err(|e| format!("Failed to fetch kind 38383 events: {}", e))?;
-
-        self.disconnect().await;
-        Ok(events.iter().map(nostr_event_to_model).collect())
+        let mut out: Vec<NostrEvent> = by_id.into_values().collect();
+        out.sort_by_key(|ev| ev.created_at);
+        Ok(out)
     }
 }
 

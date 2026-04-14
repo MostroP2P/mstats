@@ -27,11 +27,11 @@
 
 **Chosen**: Two-phase fetching with **batched** kind 38383 queries:
 1. Phase A: Query all kind 8383 events from the relay, extract order IDs and node pubkeys
-2. Phase B: Deduplicate order IDs (unique set) → single batched relay query for kind 38383 events filtering on `d` tags matching all unique order IDs
+2. Phase B: Fetch kind 38383 events using explicit `since`/`until` time windows, then match locally against the deduplicated set of `order_id` values extracted from kind 8383 events
 
 Kind 38383 fetching is **mandatory** — statistics cannot be produced without it.
 
-**Rationale**: Kind 8383 events are the entry point (constitution Principle VII). Deduplicating order IDs before the kind 38383 query eliminates N+1 roundtrips. nostr-sdk supports filtering on multiple `d` tag values in a single subscription, making this a single relay query regardless of how many unique order IDs exist (subject to relay-native limits on filter size).
+**Rationale**: Kind 8383 events are the entry point (Constitution Principle VII), so Phase A first discovers the relevant activity window from the relay itself. In practice, large unbounded queries and very large multi-`d` filters through `nostr-sdk` can produce truncated or stale-looking result sets depending on relay behavior and filter-size limits. Using explicit `since`/`until` windows for both Phase A (kind 8383) and Phase B (kind 38383) makes pagination deterministic, allows retries on smaller windows when a batch saturates the relay limit, reduces memory/spike load versus huge one-shot subscriptions, and preserves completeness by covering temporal ranges explicitly before local `order-id`/`d` matching.
 
 **Alternatives considered**:
 - Individual 38383 lookups per order ID — rejected: N+1 query pattern, unacceptably slow for large datasets

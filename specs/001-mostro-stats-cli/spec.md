@@ -119,7 +119,7 @@ Invariant: `processed == joined + unmatched + skipped`. This count set is always
 - **FR-001**: The tool MUST fetch kind 8383 development fee events from `wss://relay.mostro.network`.
 - **FR-002**: The tool MUST extract the `order-id` tag from each kind 8383 event.
 - **FR-003**: The tool MUST fetch kind 38383 order events from the same relay for every unique order ID extracted from kind 8383 events. Kind 38383 fetching is mandatory — the tool MUST NOT produce statistics without it.
-- **FR-003a**: The tool MUST deduplicate order IDs extracted from kind 8383 events before querying the relay. Kind 38383 events MUST be fetched in a single batched relay query using a filter on the `d` tags matching the deduplicated order IDs, NOT with one relay roundtrip per order.
+- **FR-003a**: The tool MUST avoid per-order relay roundtrips when collecting kind 38383 events. Relay queries MUST use explicit time windows (`since`/`until`) to avoid truncated or stale default result sets, and order matching MUST then be performed locally by comparing `DevFeeEvent.order_id` against `OrderEvent.d_tag`.
 - **FR-004**: The tool MUST join kind 8383 and kind 38383 events by order ID.
 - **FR-005**: The tool MUST compute global (network-wide) statistics across all observed Mostro nodes.
 - **FR-006**: The tool MUST compute per-node statistics, where a node is identified by the author pubkey of the kind 8383 event.

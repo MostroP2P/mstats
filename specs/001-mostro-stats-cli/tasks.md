@@ -70,7 +70,7 @@ tests/integration/  # Relay-dependent integration tests (feature-gated)
 ### Implementation for User Story 1
 
  - [x] T018 [US1] Implement `src/event_parser.rs`: parse kind 8383 → `DevFeeEvent` (extract `order-id`, `amount`, `y` tag 3rd value as `name`, pubkey, created_at); parse kind 38383 → `OrderEvent` (extract `d`, `amount_sats`, `fiat_currency` uppercase, `fiat_amount`, `type` → `OrderSide`)
- - [x] T019 [US1] Implement `src/relay.rs` two-phase fetch: (A) query kind 8383 events; (B) deduplicate order IDs → single batched relay query for kind 38383 events by `d` tag filter
+ - [x] T019 [US1] Implement `src/relay.rs` relay fetch strategy using explicit time windows for kind 8383 and kind 38383 events, then perform local matching of `order-id` against `d`
  - [x] T020 [US1] Implement `src/joiner.rs`: match DevFeeEvent.order_id to OrderEvent.d_tag → produce `JoinedOrderRecord` and `UnjoinedRecord` (reason: `OrderNotFound`)
  - [x] T021 [US1] Implement `src/aggregator.rs`: compute `GlobalStats` and `Vec<NodeStats>` from `Vec<JoinedOrderRecord>` — order count, total fees, total sats volume, avg order size, fiat volume by currency, volume by side, `source_event_ids`
  - [x] T022 [US1] Implement `src/output.rs`: human-readable formatter printing global stats → per-node stats (sorted by order_count desc) → data quality summary
