@@ -54,10 +54,14 @@ A parsed kind 38383 order event.
 - `order_side`: Option<OrderSide> — Buy or Sell
 
 **Validation rules**:
-- `d_tag` MUST be present; events without it are unprocessable
-- `amount_sats` MUST be a positive integer
+- `d_tag` MUST be present via the `d` tag; events without it are unprocessable
+- `amount_sats` MUST be parsed from the `amt` tag as a positive integer
+- `fiat_currency` is read from the `f` tag and normalized to uppercase
+- `fiat_amount` is read from the `fa` tag when present and parseable
+- `order_side` is read from the `k` tag
 - `fiat_currency` and `fiat_amount` may both be absent (fiat-less orders are valid)
 - If `fiat_currency` is present but `fiat_amount` is absent (or vice versa), the event is processed for sats but fiat is excluded from fiat volume
+- Optional tags like `y` and `z` may be present on kind 38383 events but are not required for v1 aggregation
 
 **Source**: Parsed from NostrEvent of kind 38383. Protocol reference: <https://mostro.network/protocol/order_event.html>
 
@@ -188,10 +192,9 @@ All active filters are AND-composed.
 ## Data Flow
 
 1. Fetch raw kind 8383 events → parse to DevFeeEvents (skip malformed → counted as **skipped**)
-2. Deduplicate order IDs from DevFeeEvents (unique `order_id` values, preserving event-level multiplicity)
-3. Fetch kind 38383 events in a **single batched relay query** filtering on `d` tags matching all unique order IDs
-4. Parse kind 38383 events to OrderEvents; normalize `fiat_currency` to uppercase
-5. Join by order_id → produce JoinedOrderRecords + UnjoinedRecords (unmatched → counted as **unmatched**)
-6. Apply filters → filtered JoinedOrderRecords
-7. Aggregate → GlobalStats + Vec<NodeStats>
-8. Format → ReportOutput (human-readable or JSON) with invariant `processed == joined + unmatched + skipped`
+2. Fetch raw kind 38383 events from the relay
+3. Parse kind 38383 events to OrderEvents using the standard Mostro order tags (`d`, `amt`, `f`, `fa`, `k`); normalize `fiat_currency` to uppercase
+4. Join by `DevFeeEvent.order_id == OrderEvent.d_tag` → produce JoinedOrderRecords + UnjoinedRecords (unmatched → counted as **unmatched**)
+5. Apply filters → filtered JoinedOrderRecords
+6. Aggregate → GlobalStats + Vec<NodeStats>
+7. Format → ReportOutput (human-readable or JSON) with invariant `processed == joined + unmatched + skipped`
