@@ -137,6 +137,9 @@ Printed to stdout as a single valid JSON object. Structure:
     {
       "event_id": "unmatched_8383_id",
       "order_id": "order_xyz",
+      "pubkey": "aa1234...bb5678",
+      "y_tag_value": "NODE_X",
+      "fee_amount_sats": 500,
       "reason": "OrderNotFound"
     }
   ],
