@@ -67,11 +67,16 @@ impl RelayClient {
         let now = Timestamp::now().as_secs();
         let mut window_end = now;
         let mut by_id: HashMap<String, NostrEvent> = HashMap::new();
-        let mut seen_ranges: HashSet<(u64, u64, usize)> = HashSet::new();
+        let mut seen_ranges: HashSet<(u64, u64)> = HashSet::new();
         let mut consecutive_empty_windows = 0usize;
+        let mut window_span = LOOKBACK_WINDOW_SECS;
 
         loop {
-            let window_start = window_end.saturating_sub(LOOKBACK_WINDOW_SECS);
+            let window_start = window_end.saturating_sub(window_span);
+            if !seen_ranges.insert((window_start, window_end)) {
+                break;
+            }
+
             let filter = Filter::new()
                 .kind(kind)
                 .since(Timestamp::from(window_start))
@@ -86,10 +91,7 @@ impl RelayClient {
 
             let batch: Vec<NostrEvent> = events.iter().map(nostr_event_to_model).collect();
             let batch_len = batch.len();
-
-            if !seen_ranges.insert((window_start, window_end, batch_len)) {
-                break;
-            }
+            let oldest_created_at = batch.iter().map(|ev| ev.created_at).min();
 
             if batch_len == 0 {
                 consecutive_empty_windows += 1;
@@ -97,7 +99,7 @@ impl RelayClient {
                 consecutive_empty_windows = 0;
             }
 
-            for event in batch.iter().cloned() {
+            for event in batch.into_iter() {
                 by_id.entry(event.id.clone()).or_insert(event);
             }
 
@@ -109,7 +111,25 @@ impl RelayClient {
                 break;
             }
 
+            if batch_len == WINDOW_LIMIT {
+                if let Some(oldest_created_at) = oldest_created_at {
+                    let narrowed_end = oldest_created_at.saturating_sub(1);
+                    if narrowed_end > window_start {
+                        window_end = narrowed_end;
+                        continue;
+                    }
+                }
+
+                let narrower_span = (window_span / 2).max(1);
+                if narrower_span == window_span {
+                    break;
+                }
+                window_span = narrower_span;
+                continue;
+            }
+
             window_end = window_start.saturating_sub(1);
+            window_span = LOOKBACK_WINDOW_SECS;
         }
 
         let mut out: Vec<NostrEvent> = by_id.into_values().collect();
