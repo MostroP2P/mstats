@@ -93,7 +93,10 @@ pub enum UnjoinReason {
 #[derive(Debug, Clone, Serialize)]
 pub struct UnjoinedRecord {
     pub event_id: String,
-    pub order_id: String,
+    pub order_id: Option<String>,
+    pub pubkey: String,
+    pub y_tag_value: Option<String>,
+    pub fee_amount_sats: Option<u64>,
     pub reason: UnjoinReason,
 }
 

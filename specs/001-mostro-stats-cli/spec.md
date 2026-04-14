@@ -99,6 +99,7 @@ A developer or analyst pipes the tool's JSON output into another script or tool 
 - **What happens when** the `y` tag second value is missing from a kind 8383 event? — Per-node reports show the node pubkey with the `y` tag field marked as unavailable.
 - **What happens when** multiple kind 8383 events for the same node pubkey expose different `y` tag second values? — In v1 the tool displays the `y` tag value from the most recently seen (highest `created_at`) kind 8383 event for that node. No reconciliation or frequency-based strategy is applied.
 - **How does the system handle** orders where the `d` tag on the kind 38383 event does not match any `order-id` from kind 8383 events? — These orphan order events are not included in v1 statistics (kind 8383 is the entry point).
+- **What happens when** a kind 8383 event cannot be joined to a kind 38383 event? — The unmatched event is reported in the unjoined list with all directly available kind 8383 metadata: `event_id`, `order_id` (when present), `pubkey` (node identity), `y` tag second value (when available), and `amount` tag value (when parseable). No order-level fields are fabricated; the reason for the failed join is included.
 - **What happens when** the data quality summary counts do not add up (processed ≠ joined + unmatched + skipped)? — This is an internal invariant violation; the tool MUST NOT produce output and MUST exit with a non-zero status.
 
 ### Data Quality Summary

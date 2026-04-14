@@ -209,7 +209,10 @@ mod tests {
         let joined = vec![make_joined("1", "aa", 100, 1000000)];
         let unjoined = vec![UnjoinedRecord {
             event_id: "fx".to_string(),
-            order_id: "ox".to_string(),
+            order_id: Some("ox".to_string()),
+            pubkey: "aa".to_string(),
+            y_tag_value: None,
+            fee_amount_sats: Some(100),
             reason: UnjoinReason::OrderNotFound,
         }];
         let report = aggregate(joined, unjoined, 1);

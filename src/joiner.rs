@@ -27,7 +27,10 @@ pub fn join_events(
         } else {
             unjoined.push(UnjoinedRecord {
                 event_id: fee.event_id.clone(),
-                order_id: fee.order_id.clone(),
+                order_id: Some(fee.order_id.clone()),
+                pubkey: fee.pubkey.clone(),
+                y_tag_value: fee.y_tag_value.clone(),
+                fee_amount_sats: Some(fee.fee_amount_sats),
                 reason: UnjoinReason::OrderNotFound,
             });
         }
@@ -79,5 +82,8 @@ mod tests {
         let (joined, unjoined) = join_events(&fees, &orders);
         assert_eq!(joined.len(), 0);
         assert_eq!(unjoined.len(), 1);
+        assert_eq!(unjoined[0].pubkey, "aa".repeat(32));
+        assert_eq!(unjoined[0].fee_amount_sats, Some(100));
+        assert!(matches!(unjoined[0].reason, UnjoinReason::OrderNotFound));
     }
 }

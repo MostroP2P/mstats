@@ -86,10 +86,14 @@ The result of joining a DevFeeEvent with its corresponding OrderEvent.
 
 ### UnjoinedRecord
 
-A kind 8383 event that could not be joined to a kind 38383 event.
+A kind 8383 event that could not be joined to a kind 38383 event. Retains all directly available kind 8383 metadata for auditing and node-level analysis, even when order-level enrichment is missing.
 
 **Fields**:
-- `fee_event`: DevFeeEvent — The kind 8383 event
+- `event_id`: String — Nostr event ID of the kind 8383 event
+- `order_id`: String — The `order-id` tag value (when present)
+- `pubkey`: String — The event author pubkey (node identity)
+- `y_tag_value`: Option<String> — Second value of the `y` tag, when available
+- `fee_amount_sats`: Option<u64> — Development fee amount from the `amount` tag, when parseable
 - `reason`: UnjoinReason — Why the join failed
   - `OrderNotFound` — No kind 38383 event exists with matching `d` tag
   - `OrderMalformed` — Kind 38383 event exists but is missing required fields
