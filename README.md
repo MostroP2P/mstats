@@ -45,3 +45,7 @@ Integration tests (require relay access):
 ```bash
 cargo test --features integration-tests
 ```
+
+## License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
